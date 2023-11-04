@@ -1,6 +1,6 @@
 use ical::{generator::IcalEvent, parser::ical::component::IcalCalendar, property::Property};
 
-use crate::error::{self, WebError};
+use crate::error::{self, Error};
 
 pub async fn get_ical() -> error::Result<IcalCalendar> {
     let response = reqwest::get(dotenvy_macro::dotenv!("ICS_URL")).await?;
@@ -11,9 +11,9 @@ pub async fn get_ical() -> error::Result<IcalCalendar> {
 
     let first_calender = ical_reader
         .get(0)
-        .ok_or(WebError::InternalServerError)?
+        .ok_or(Error::InternalServerError)?
         .as_ref()
-        .map_err(|_| WebError::InternalServerError)?
+        .map_err(|_| Error::InternalServerError)?
         .to_owned();
 
     Ok(first_calender)
@@ -86,9 +86,9 @@ fn patch_lecture(event: &mut IcalEvent) {
 }
 
 fn split_lecturer_from_text(text: String) -> (String, String) {
-    let mut words = text.split(' ');
+    let words = text.split(' ').collect::<Vec<_>>();
 
-    let lecturer_index = words.position(|x| {
+    let lecturer_index = words.iter().position(|x| {
         x.contains("Herr")
             || x.contains("Hr.")
             || x.contains("Frau")
@@ -98,12 +98,11 @@ fn split_lecturer_from_text(text: String) -> (String, String) {
     });
 
     if let Some(li) = lecturer_index {
-        if words.clone().count() < li + 2 || li == 0 {
+        if words.len() < li + 1 || li == 0 {
             (String::new(), text)
         } else {
-            let collection = words.collect::<Vec<_>>();
-            let first = &collection[li..li + 2].join("");
-            let second = collection[..li].join(" ") + " " + &collection[li + 2..].join(" ");
+            let first = &words[li..li + 2].join(" ");
+            let second = words[..li].join(" ") + " " + &words[li + 2..].join(" ");
 
             (String::from(first), second)
         }

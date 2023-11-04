@@ -6,8 +6,10 @@ use axum::{routing::get, Router};
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
     let app = Router::new().route("/", get(routes::handler));
 
+    log::info!("Starting");
     axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 3000)))
         .serve(app.into_make_service())
         .await
