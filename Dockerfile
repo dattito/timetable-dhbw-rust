@@ -1,55 +1,33 @@
-####################################################################################################
-## Builder
-####################################################################################################
-FROM rust:1.73-buster AS chef
-RUN update-ca-certificates
-RUN cargo install cargo-chef 
-WORKDIR app
+################
+##### Builder
+################
+FROM ghcr.io/dattito/rust-alpine-mimalloc:1.73 as builder
 
-FROM chef as planner
-COPY . .
-RUN cargo chef prepare  --recipe-path recipe.json
+ARG TARGETARCH
 
-FROM chef AS builder
-
-
-ENV USER=app
-ENV UID=10001
-
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "/nonexistent" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid "${UID}" \
-    "${USER}"
-
-
-COPY --from=planner /app/recipe.json recipe.json
-
-RUN cargo chef cook --release --recipe-path recipe.json
-
-COPY  . .
-
-RUN cargo build --release
-
-####################################################################################################
-## Final image
-####################################################################################################
-FROM gcr.io/distroless/cc
-
-COPY --from=builder /etc/passwd /etc/passwd
-COPY --from=builder /etc/group /etc/group
+RUN case "$TARGETARCH" in \
+        "arm64" | "aarch64") rustup target add aarch64-unknown-linux-musl ;; \
+        "amd64" | "x86_64")  rustup target add x86_64-unknown-linux-musl ;; \
+        *)                   echo "Unsupported architecture: $TARGETARCH" && exit 1 ;; \
+    esac
 
 WORKDIR /app
 
-COPY --from=builder /app/target/release/timetable-dhbw-rust ./
+COPY . .
 
-USER app:app
+RUN case "$TARGETARCH" in \
+        "arm64" | "aarch64") cargo build --target aarch64-unknown-linux-musl --release ;; \
+        "amd64" | "x86_64")  cargo build --target x86_64-unknown-linux-musl --release ;; \
+        *)                   echo "Unsupported architecture: $TARGETARCH" && exit 1 ;; \
+    esac
 
-ENV RUST_LOG=info
+################
+##### Runtime
+################
+FROM scratch AS runtime 
+
+COPY --from=builder /app/target/*-unknown-linux-musl/release/timetable-dhbw-rust /
 
 EXPOSE 3000
 
-CMD ["/app/timetable-dhbw-rust"]
+ENTRYPOINT ["/timetable-dhbw-rust"]
