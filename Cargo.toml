@@ -12,6 +12,6 @@ serde_json = "1.0"
 tokio = { version = "1.0", features = ["full"] }
 thiserror = "1.0"
 ical = {version="0.8", features=["ical", "generator"]}
-dotenvy_macro = "0.15.7"
 env_logger = "0.10"
 log = "0.4"
+dotenvy = "0.15.7"

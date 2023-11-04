@@ -3,7 +3,7 @@ use ical::{generator::IcalEvent, parser::ical::component::IcalCalendar, property
 use crate::error::{self, Error};
 
 pub async fn get_ical() -> error::Result<IcalCalendar> {
-    let response = reqwest::get(dotenvy_macro::dotenv!("ICS_URL")).await?;
+    let response = reqwest::get(std::env::var("ICS_URL").unwrap()).await?;
 
     let text = response.text().await?;
 

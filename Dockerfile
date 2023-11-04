@@ -48,6 +48,8 @@ COPY --from=builder /app/target/release/timetable-dhbw-rust ./
 
 USER app:app
 
+ENV RUST_LOG=info
+
 EXPOSE 3000
 
 CMD ["/app/timetable-dhbw-rust"]
