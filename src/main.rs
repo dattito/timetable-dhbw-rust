@@ -16,7 +16,7 @@ async fn main() {
     let app = Router::new().route("/", get(routes::handler));
 
     log::info!("Starting server");
-    axum::Server::bind(&std::net::SocketAddr::from(([127, 0, 0, 1], 3000)))
+    axum::Server::bind(&std::net::SocketAddr::from(([0, 0, 0, 0], 3000)))
         .serve(app.into_make_service())
         .await
         .unwrap();
