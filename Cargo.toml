@@ -15,3 +15,10 @@ ical = {version="0.8", features=["ical", "generator"]}
 env_logger = "0.10"
 log = "0.4"
 dotenvy = "0.15.7"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
